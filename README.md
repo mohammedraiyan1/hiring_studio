@@ -1,10 +1,10 @@
 # Hiring Studio
 
-**AI job description, interview question and hiring rubric generator — with candidate scoring and comparison.**
+**An AI-powered tool for generating job descriptions, interview questions, and hiring rubrics, with candidate scoring and comparison.**
 
-Built for small-business owners and hiring managers with no HR function. Describe a role in two sentences and get
-back one connected hiring kit: a job description, a structured interview script, and a weighted scoring rubric that
-all describe the *same* competencies. Score candidates against that rubric, then compare them side by side.
+Designed for small-business owners and hiring managers without an HR team. Describe a role in two sentences to generate
+one connected hiring kit: a job description, a structured interview script, and a weighted scoring rubric that all cover
+the *same* competencies. Use the rubric to score candidates and compare them side by side.
 
 ```
 Role input → retrieval over a hiring knowledge base → Gemini
@@ -35,7 +35,7 @@ copy server\.env.example server\.env
 cp server/.env.example server/.env
 ```
 
-Open `server/.env` and paste your Gemini API key (see below). Then:
+Open `server/.env`, add your Gemini API key (see below), and run:
 
 ```bash
 npm run dev
@@ -44,8 +44,8 @@ npm run dev
 - Frontend: <http://localhost:5173>
 - API: <http://localhost:5000>
 
-Create an account on the sign-in screen, then use one of the example presets on the **New role** page to see the whole
-flow in under a minute.
+Register through the sign-in screen, then choose an example preset on the **New role** page to explore the full
+workflow in under a minute.
 
 ### Production-style single-port run
 
@@ -54,13 +54,13 @@ npm run build
 npm start
 ```
 
-The API then serves the built frontend from the same port: <http://localhost:5000>.
+In this mode, the API also serves the built frontend from the same port: <http://localhost:5000>.
 
 ---
 
 ## Configuration
 
-All configuration lives in **`server/.env`**. The example file is fully commented; these are the values that matter.
+All settings are managed in **`server/.env`**. The example file includes comments; the key options are listed below.
 
 | Variable | Required | What it does |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ All configuration lives in **`server/.env`**. The example file is fully commente
 | `JWT_SECRET` | Recommended | Any long random string. Without it, logins stop working across server restarts. |
 | `PORT` | No | Defaults to `5000`. |
 
-**Getting a free Gemini API key**
+**Get a free Gemini API key**
 
 1. Go to <https://aistudio.google.com/apikey>.
 2. Sign in with a Google account and choose **Create API key**.
@@ -80,7 +80,7 @@ All configuration lives in **`server/.env`**. The example file is fully commente
 
 The key is only ever read server-side. The browser talks to `/api` and never sees it.
 
-**Using MongoDB Atlas (optional)**
+**Set up MongoDB Atlas (optional)**
 
 1. Create a free M0 cluster at <https://cloud.mongodb.com>.
 2. Add a database user, and allow access from your IP (or `0.0.0.0/0` for a hackathon demo).
@@ -92,7 +92,7 @@ Documents use string `_id`s, so the same data shape works in either backend.
 
 ## How it works
 
-### 1. Retrieval
+### 1. Knowledge retrieval
 
 A curated knowledge base ships with the project: competency frameworks, STAR interviewing guidance, rubric-design
 rules, structured-hiring practice, and role-family notes for engineering, sales, marketing, operations, product,
@@ -115,7 +115,7 @@ document can occupy every slot and the rubric comes back with no behavioural anc
 If no API key is present, the dense channel is simply absent and retrieval degrades to BM25 rather than failing.
 `TOP_K` is a named constant in `server/src/rag/retriever.js`.
 
-### 2. Generation
+### 2. Hiring kit generation
 
 One Gemini call produces the whole kit, so the three parts are connected by construction rather than stitched
 together afterwards. The response is requested as JSON, then:
@@ -130,7 +130,7 @@ together afterwards. The response is requested as JSON, then:
 
 Transient upstream failures (429/503, timeouts) are retried with exponential backoff; a bad prompt is not.
 
-### 3. Alignment check
+### 3. Alignment verification
 
 The claim that the description, questions and rubric describe the same job is *checked*, not asserted. The model is
 asked to declare which rubric dimensions each question tests and which responsibilities each dimension covers; those
@@ -138,7 +138,7 @@ declarations are resolved against the real content, with lexical-overlap inferen
 uncovered is reported. The **Alignment check** tab shows the traceability matrix and flags, for example, a rubric
 dimension that no interview question tests — which would otherwise be scored on impression alone.
 
-### 4. Scoring and comparison
+### 4. Candidate scoring and comparison
 
 Candidate evaluation is derived from stored scores, so there is one source of truth for a candidate's numbers.
 Beyond weighted totals and percentages, the comparison engine computes:
@@ -234,7 +234,7 @@ Alternatively deploy the whole thing as one service: build the client, then run 
 | MongoDB warning at boot, app still starts | The URI was unreachable, so the local file store was used instead. Check the connection string and IP allowlist. |
 | Upload rejected as *almost no text* | The PDF is a scanned image. This project does not OCR — paste the text as a note instead. |
 
-## Notes on scope
+## Project notes
 
 - Plain JavaScript throughout (`.js` / `.jsx`), no TypeScript.
 - Google Gemini is the only AI provider.
