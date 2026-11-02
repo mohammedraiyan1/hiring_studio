@@ -92,6 +92,9 @@ router.post(
       ownerId: req.user.id,
       organizationId: role.organizationId || 'nex-prototype',
       ...readDetails(req.body),
+      status: 'screening',
+      stageHistory: [{ from: null, to: 'screening', at: now, actorType: 'staff', actorId: req.user.id, note: 'Added by recruiter' }],
+      review: { status: 'unreviewed', verifiedFields: [], notes: '', reviewedBy: null, reviewedAt: null },
       scores: readScores(req.body, role.kit.rubric.dimensions),
       createdAt: now,
       updatedAt: now,
@@ -108,7 +111,7 @@ router.put(
     const role = await ownedRole(existing.roleId, req.user.id, req.user.organizationId);
 
     const updated = await candidates.updateById(existing._id, {
-      ...readDetails(req.body),
+      ...readDetails({ ...req.body, status: existing.status }),
       scores: readScores(req.body, role.kit.rubric.dimensions),
       updatedAt: new Date().toISOString(),
     });
