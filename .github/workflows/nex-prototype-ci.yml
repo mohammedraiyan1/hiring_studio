@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feat/nex-talent-prototype]
+    branches: [feat/nex-talent-prototype, feat/nex-recruitment-pipeline]
 jobs:
   verify:
     runs-on: ubuntu-latest
