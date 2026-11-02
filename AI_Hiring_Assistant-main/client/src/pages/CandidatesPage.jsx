@@ -19,6 +19,7 @@ const emptyForm = (interviewer = '') => ({
   interviewer,
   interviewDate: today(),
   notes: '',
+  status: 'pending',
   scores: {},
 });
 
@@ -145,6 +146,7 @@ export default function CandidatesPage() {
       interviewer: candidate.interviewer ?? '',
       interviewDate: candidate.interviewDate || today(),
       notes: candidate.notes ?? '',
+      status: candidate.status || 'pending',
       scores: candidate.scores ?? {},
     });
     setEntryMode('manual');
