@@ -98,7 +98,7 @@ export function AppShell({ children }) {
               </NavLink>
             ))}
           </nav>
-          <p className="hidden text-[13px] font-medium text-ink-2 md:block">{pathname === '/' ? 'Recruitment workspace' : 'Hiring workspace'}</p>
+          <p className="hidden text-[13px] font-medium text-ink-2 md:block">{pathname === '/' ? 'Recruitment workspace' : 'NEX Recruit workspace'}</p>
           <AiModeBadge />
         </header>
 
