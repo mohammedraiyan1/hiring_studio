@@ -4,6 +4,8 @@ import { asyncRoute, badRequest, notFound } from '../lib/errors.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateHiringKit } from '../services/hiringKitService.js';
 import PDFDocument from 'pdfkit';
+import { ORGANIZATION_ID, requireRole } from '../middleware/access.js';
+import { recordAuditEvent } from '../services/auditService.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -56,7 +58,7 @@ const present = ({ _id, ...role }) => ({ id: _id, ...role });
 
 async function ownedRole(req) {
   const role = await roles.findById(req.params.id);
-  if (!role || role.ownerId !== req.user.id) throw notFound('That role could not be found.');
+  if (!role || (role.organizationId !== req.user.organizationId && role.ownerId !== req.user.id)) throw notFound('That role could not be found.');
   return role;
 }
 
@@ -114,11 +116,14 @@ router.post(
 
     const role = await roles.insert({
       ownerId: req.user.id,
+      organizationId: ORGANIZATION_ID,
+      publicationStatus: 'draft',
       roleInput,
       ...generated,
       createdAt: new Date().toISOString(),
     });
 
+    await recordAuditEvent({ actor: req.user, action: 'role.created', resourceType: 'role', resourceId: role._id, metadata: { roleTitle: roleInput.roleTitle } });
     res.status(201).json({ role: present(role) });
   }),
 );
