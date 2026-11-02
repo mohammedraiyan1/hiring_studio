@@ -128,6 +128,19 @@ router.post(
   }),
 );
 
+router.post('/:id/publish', requireRole('admin', 'recruiter', 'hiring_manager'), asyncRoute(async (req, res) => {
+  const role = await ownedRole(req);
+  const updated = await roles.updateById(role._id, { publicationStatus: 'published', publishedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  await recordAuditEvent({ actor: req.user, action: 'role.published', resourceType: 'role', resourceId: role._id });
+  res.json({ role: present(updated) });
+}));
+router.post('/:id/unpublish', requireRole('admin', 'recruiter', 'hiring_manager'), asyncRoute(async (req, res) => {
+  const role = await ownedRole(req);
+  const updated = await roles.updateById(role._id, { publicationStatus: 'draft', updatedAt: new Date().toISOString() });
+  await recordAuditEvent({ actor: req.user, action: 'role.unpublished', resourceType: 'role', resourceId: role._id });
+  res.json({ role: present(updated) });
+}));
+
 router.get(
   '/:id',
   asyncRoute(async (req, res) => {
