@@ -14,44 +14,14 @@ import candidateRoutes from './routes/candidates.js';
 import interviewRoutes from './routes/interviews.js';
 import resumeRoutes from './routes/resume.js';
 import knowledgeRoutes from './routes/knowledge.js';
-
+import adminRoutes from './routes/admin.js';
 export function createApp() {
-  const app = express();
-
-  app.use(cors({ origin: config.clientOrigins.length ? config.clientOrigins : true }));
-  app.use(express.json({ limit: '1mb' }));
-
-  app.get('/api/health', (_req, res) => {
-    res.json({
-      ok: true,
-      storage: storeKind(),
-      ai: {
-        provider: 'google-gemini',
-        configured: isGeminiEnabled(),
-        model: isGeminiEnabled() ? config.gemini.model : null,
-        mode: isGeminiEnabled() ? 'live' : 'offline-demo',
-      },
-      retrieval: { topK: TOP_K, ...knowledgeStats() },
-    });
-  });
-
-  app.use('/api/auth', authRoutes);
-  app.use('/api/roles', roleRoutes);
-  app.use('/api', candidateRoutes);
-  app.use('/api', interviewRoutes);
-  app.use('/api', resumeRoutes);
-  app.use('/api/knowledge', knowledgeRoutes);
-
-  // Serve the built frontend when it exists, so a deployed instance runs on one
-  // port. In development the Vite dev server proxies /api here instead.
-  const clientDist = path.resolve(config.serverRoot, '../client/dist');
-  if (fs.existsSync(path.join(clientDist, 'index.html'))) {
-    app.use(express.static(clientDist));
-    app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
-  }
-
-  app.use(notFoundHandler);
-  app.use(errorHandler);
-
-  return app;
+ const app=express();
+ app.use(cors({origin:config.clientOrigins.length?config.clientOrigins:true,methods:['GET','POST','PUT','PATCH','DELETE','OPTIONS'],allowedHeaders:['Content-Type','Authorization','X-Bootstrap-Token']}));
+ app.use(express.json({limit:'1mb'}));
+ app.get('/api/health',(_req,res)=>res.json({ok:true,storage:storeKind(),environment:config.nodeEnv,ai:{provider:'google-gemini',configured:isGeminiEnabled(),model:isGeminiEnabled()?config.gemini.model:null,mode:isGeminiEnabled()?'live':'offline-demo'},retrieval:{topK:TOP_K,...knowledgeStats()}}));
+ app.use('/api/auth',authRoutes); app.use('/api/admin',adminRoutes); app.use('/api/roles',roleRoutes); app.use('/api',candidateRoutes); app.use('/api',interviewRoutes); app.use('/api',resumeRoutes); app.use('/api/knowledge',knowledgeRoutes);
+ const clientDist=path.resolve(config.serverRoot,'../client/dist');
+ if(fs.existsSync(path.join(clientDist,'index.html'))){app.use(express.static(clientDist));app.get(/^(?!\\/api\\/).*/ ,(_req,res)=>res.sendFile(path.join(clientDist,'index.html')));}
+ app.use(notFoundHandler); app.use(errorHandler); return app;
 }
