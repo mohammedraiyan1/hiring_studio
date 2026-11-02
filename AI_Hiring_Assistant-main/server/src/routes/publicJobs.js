@@ -9,7 +9,8 @@ import { extractResumeEvidence } from '../services/resumeEvidenceService.js';
 
 const router = Router();
 const windows = new Map();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1 }, fileFilter: (_req, file, cb) => { const ext=String(file.originalname||'').toLowerCase().split('.').pop(); const allowed=(ext==='pdf'&&file.mimetype==='application/pdf')||(ext==='docx'&&file.mimetype==='application/vnd.openxmlformats-officedocument.wordprocessingml.document'); cb(allowed?null:badRequest('Upload a PDF or DOCX resume.'),allowed); } });
+const resumeUpload = (req,res,next) => upload.single('resume')(req,res,error => { if(!error)return next(); if(error.code==='LIMIT_FILE_SIZE')return next(badRequest('Resume must be 8 MB or smaller.')); return next(error); });
 
 function applicationThrottle(req,res,next) {
   const key=req.ip || 'unknown', now=Date.now(), windowMs=15*60*1000;
@@ -32,7 +33,7 @@ router.get('/jobs/:id',asyncRoute(async(req,res)=>{
   if(!role||role.organizationId!==ORGANIZATION_ID||role.publicationStatus!=='published')throw notFound('This vacancy is no longer available.');
   res.json({job:publicJob(role)});
 }));
-router.post('/jobs/:id/applications',applicationThrottle,upload.single('resume'),asyncRoute(async(req,res)=>{
+router.post('/jobs/:id/applications',applicationThrottle,resumeUpload,asyncRoute(async(req,res)=>{
   const role=await roles.findById(req.params.id);
   if(!role||role.organizationId!==ORGANIZATION_ID||role.publicationStatus!=='published')throw notFound('This vacancy is no longer accepting applications.');
   if(String(req.body?.website||'').trim())throw badRequest('Application could not be accepted.');
@@ -49,6 +50,9 @@ router.post('/jobs/:id/applications',applicationThrottle,upload.single('resume')
   if(req.file&&!['pdf','docx'].includes(extension))throw badRequest('Upload a PDF or DOCX resume.');
   let resumeProfile=null,resumeMetadata=null;
   if(req.file){
+    const signature=req.file.buffer.subarray(0,4).toString('hex');
+    if(extension==='pdf'&&req.file.buffer.subarray(0,4).toString()!=='%PDF')throw badRequest('The uploaded PDF file signature is invalid.');
+    if(extension==='docx'&&!['504b0304','504b0506','504b0708'].includes(signature))throw badRequest('The uploaded DOCX file signature is invalid.');
     const text=await extractText(req.file.buffer,req.file.originalname);
     if(text.length<40)throw badRequest('The resume contains too little readable text. Scanned-image OCR is not supported yet.');
     const analysis=await extractResumeEvidence(text);
