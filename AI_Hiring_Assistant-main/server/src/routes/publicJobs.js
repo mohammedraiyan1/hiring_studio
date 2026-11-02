@@ -6,6 +6,7 @@ import { asyncRoute, badRequest, notFound } from '../lib/errors.js';
 import { ORGANIZATION_ID } from '../middleware/access.js';
 import { extractText } from '../rag/ingest.js';
 import { extractResumeEvidence } from '../services/resumeEvidenceService.js';
+import { recordAuditEvent } from '../services/auditService.js';
 
 const router = Router();
 const windows = new Map();
@@ -69,6 +70,7 @@ router.post('/jobs/:id/applications',applicationThrottle,resumeUpload,asyncRoute
     review:{status:'unreviewed',verifiedFields:[],notes:'',reviewedBy:null,reviewedAt:null},
     consent:{accepted:true,policyVersion:'prototype-privacy-v1',acceptedAt:now},scores:{},createdAt:now,updatedAt:now
   });
+  await recordAuditEvent({actor:{id:null,email:'public-candidate'},action:'application.submitted',resourceType:'application',resourceId:candidate._id,metadata:{roleId:role._id,resumeReceived:Boolean(req.file)}});
   res.status(201).json({application:{reference:candidate._id,status:'received',resumeReceived:Boolean(req.file),message:'Your application has been received.'}});
 }));
 export default router;
