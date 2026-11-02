@@ -147,7 +147,7 @@ router.get(
 
 
 const STAGE_TRANSITIONS = {
-  applied: ['screening','rejected','withdrawn'],
+  applied: ['screening','interview','rejected','withdrawn'],
   screening: ['assessment','interview','rejected','withdrawn'],
   assessment: ['interview','rejected','withdrawn'],
   interview: ['offer','rejected','withdrawn','assessment'],
