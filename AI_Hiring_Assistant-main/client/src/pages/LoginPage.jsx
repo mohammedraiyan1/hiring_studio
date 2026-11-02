@@ -13,7 +13,7 @@ const PROMISES = [
 export default function LoginPage({ initialMode = 'login' }) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState(initialMode);
-  const [form, setForm] = useState({ name: '', company: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', company: '', email: '', password: '', inviteCode: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -43,7 +43,7 @@ export default function LoginPage({ initialMode = 'login' }) {
               <path d="M4 12h5l2-5 3 10 2-5h4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <p className="text-[15px] font-semibold">Hiring Studio</p>
+          <p className="text-[15px] font-semibold">NEX Recruit</p>
         </div>
 
         <div className="max-w-md">
@@ -75,7 +75,7 @@ export default function LoginPage({ initialMode = 'login' }) {
             {registering ? 'Create your account' : 'Sign in'}
           </h2>
           <p className="mt-1.5 text-[13px] text-ink-2">
-            {registering ? 'One account holds your roles, rubrics and candidate scores.' : 'Welcome back.'}
+            {registering ? 'Invited staff can access the NEX prototype recruitment workspace.' : 'Welcome back.'}
           </p>
 
           <form onSubmit={submit} className="mt-7 space-y-4">
@@ -87,6 +87,9 @@ export default function LoginPage({ initialMode = 'login' }) {
                 <Field label="Company" hint="Used in the generated job descriptions.">
                   <Input value={form.company} onChange={update('company')} autoComplete="organization" />
                 </Field>
+                <Field label="Staff invitation code" required>
+                  <Input value={form.inviteCode} onChange={update('inviteCode')} autoComplete="off" required />
+                </Field>
               </>
             ) : null}
 
@@ -94,7 +97,7 @@ export default function LoginPage({ initialMode = 'login' }) {
               <Input type="email" value={form.email} onChange={update('email')} autoComplete="email" required />
             </Field>
 
-            <Field label="Password" required hint={registering ? 'At least 8 characters.' : undefined}>
+            <Field label="Password" required hint={registering ? 'At least 12 characters.' : undefined}>
               <Input
                 type="password"
                 value={form.password}
@@ -108,7 +111,7 @@ export default function LoginPage({ initialMode = 'login' }) {
 
             <Button type="submit" size="lg" className="w-full" disabled={busy}>
               {busy ? <Spinner /> : null}
-              {registering ? 'Create account' : 'Sign in'}
+              {registering ? 'Join prototype workspace' : 'Sign in'}
             </Button>
           </form>
 

@@ -5,7 +5,7 @@ import { Badge } from './ui';
 import { IconBook, IconDashboard, IconLogout, IconSpark } from './icons';
 
 const NAV = [
-  { to: '/', label: 'Roles', icon: IconDashboard, end: true },
+  { to: '/', label: 'Recruitment', icon: IconDashboard, end: true },
   { to: '/roles/new', label: 'New role', icon: IconSpark },
   { to: '/knowledge', label: 'Knowledge base', icon: IconBook },
 ];
@@ -39,8 +39,8 @@ export function AppShell({ children }) {
             <IconTargetMark />
           </span>
           <div className="leading-tight">
-            <p className="text-[15px] font-semibold tracking-tight text-ink">Hiring Studio</p>
-            <p className="text-[11px] text-muted">Hiring operations</p>
+            <p className="text-[15px] font-semibold tracking-tight text-ink">NEX Recruit</p>
+            <p className="text-[11px] text-muted">Prototype workspace</p>
           </div>
         </div>
 
@@ -98,7 +98,7 @@ export function AppShell({ children }) {
               </NavLink>
             ))}
           </nav>
-          <p className="hidden text-[13px] font-medium text-ink-2 md:block">{pathname === '/' ? 'Your open roles' : 'Hiring workspace'}</p>
+          <p className="hidden text-[13px] font-medium text-ink-2 md:block">{pathname === '/' ? 'Recruitment workspace' : 'NEX Recruit workspace'}</p>
           <AiModeBadge />
         </header>
 

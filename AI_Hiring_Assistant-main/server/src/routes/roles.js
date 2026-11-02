@@ -4,6 +4,8 @@ import { asyncRoute, badRequest, notFound } from '../lib/errors.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateHiringKit } from '../services/hiringKitService.js';
 import PDFDocument from 'pdfkit';
+import { ORGANIZATION_ID, requireRole } from '../middleware/access.js';
+import { recordAuditEvent } from '../services/auditService.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -49,6 +51,8 @@ const summarise = (role, candidateCount) => ({
   generationSource: role.generation.source,
   retrievalMode: role.retrieval.mode,
   candidateCount,
+  publicationStatus: role.publicationStatus || 'draft',
+  publishedAt: role.publishedAt || null,
   createdAt: role.createdAt,
 });
 
@@ -56,7 +60,7 @@ const present = ({ _id, ...role }) => ({ id: _id, ...role });
 
 async function ownedRole(req) {
   const role = await roles.findById(req.params.id);
-  if (!role || role.ownerId !== req.user.id) throw notFound('That role could not be found.');
+  if (!role || (role.organizationId !== req.user.organizationId && role.ownerId !== req.user.id)) throw notFound('That role could not be found.');
   return role;
 }
 
@@ -64,8 +68,8 @@ router.get(
   '/',
   asyncRoute(async (req, res) => {
     const [owned, allCandidates] = await Promise.all([
-      roles.find({ ownerId: req.user.id }, { sort: { createdAt: -1 } }),
-      candidates.find({ ownerId: req.user.id }),
+      roles.find({ organizationId: req.user.organizationId }, { sort: { createdAt: -1 } }),
+      candidates.find({ organizationId: req.user.organizationId }),
     ]);
 
     const counts = allCandidates.reduce(
@@ -114,14 +118,30 @@ router.post(
 
     const role = await roles.insert({
       ownerId: req.user.id,
+      organizationId: ORGANIZATION_ID,
+      publicationStatus: 'draft',
       roleInput,
       ...generated,
       createdAt: new Date().toISOString(),
     });
 
+    await recordAuditEvent({ actor: req.user, action: 'role.created', resourceType: 'role', resourceId: role._id, metadata: { roleTitle: roleInput.roleTitle } });
     res.status(201).json({ role: present(role) });
   }),
 );
+
+router.post('/:id/publish', requireRole('admin', 'recruiter', 'hiring_manager'), asyncRoute(async (req, res) => {
+  const role = await ownedRole(req);
+  const updated = await roles.updateById(role._id, { publicationStatus: 'published', publishedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  await recordAuditEvent({ actor: req.user, action: 'role.published', resourceType: 'role', resourceId: role._id });
+  res.json({ role: present(updated) });
+}));
+router.post('/:id/unpublish', requireRole('admin', 'recruiter', 'hiring_manager'), asyncRoute(async (req, res) => {
+  const role = await ownedRole(req);
+  const updated = await roles.updateById(role._id, { publicationStatus: 'draft', updatedAt: new Date().toISOString() });
+  await recordAuditEvent({ actor: req.user, action: 'role.unpublished', resourceType: 'role', resourceId: role._id });
+  res.json({ role: present(updated) });
+}));
 
 router.get(
   '/:id',

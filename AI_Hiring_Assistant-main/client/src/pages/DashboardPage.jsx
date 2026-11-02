@@ -9,7 +9,7 @@ import { IconArrowRight, IconDashboard, IconPlus, IconSpark, IconTrash, IconUser
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
-function RoleCard({ role, onDelete, onDownload }) {
+function RoleCard({ role, onDelete, onDownload, onPublish }) {
   return (
     <Card className="group relative flex flex-col p-5 transition-colors hover:border-edge">
       <div className="flex items-start justify-between gap-3 pr-32">
@@ -44,6 +44,7 @@ function RoleCard({ role, onDelete, onDownload }) {
       <div className="mt-4 flex flex-wrap gap-1.5">
         <Badge>{role.dimensionCount} rubric dimensions</Badge>
         <Badge>{role.questionCount} questions</Badge>
+        <Badge tone={role.publicationStatus === 'published' ? 'good' : 'warning'}>{role.publicationStatus || 'draft'}</Badge>
         {role.generationSource === 'offline' ? <Badge tone="warning">offline</Badge> : null}
       </div>
 
@@ -71,6 +72,8 @@ function RoleCard({ role, onDelete, onDownload }) {
             </Link>
           </>
         ) : null}
+        <button type="button" onClick={() => onPublish(role)} className="inline-flex h-8 items-center rounded-lg border border-line px-3 text-[13px] font-medium text-ink-2 hover:bg-raised">{role.publicationStatus === 'published' ? 'Unpublish' : 'Publish vacancy'}</button>
+        <Link to="/careers" className="inline-flex h-8 items-center rounded-lg px-2 text-[13px] text-muted hover:text-ink">Candidate portal</Link>
         <Link
           to={`/roles/${role.id}`}
           className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg bg-accent px-3 text-[13px] font-medium text-ink transition-all hover:brightness-95"
@@ -110,6 +113,15 @@ export default function DashboardPage() {
     } catch (requestError) {
       notify(requestError.message, 'error');
     }
+  }
+
+  async function togglePublication(role) {
+    try {
+      if (role.publicationStatus === 'published') await api.unpublishRole(role.id);
+      else await api.publishRole(role.id);
+      notify(role.publicationStatus === 'published' ? 'Vacancy unpublished.' : 'Vacancy published to the prototype careers portal.', 'success');
+      load();
+    } catch (requestError) { notify(requestError.message, 'error'); }
   }
 
   async function downloadPdf(role) {
@@ -185,7 +197,7 @@ export default function DashboardPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {roles.map((role) => (
-            <RoleCard key={role.id} role={role} onDelete={remove} onDownload={downloadPdf} />
+            <RoleCard key={role.id} role={role} onDelete={remove} onDownload={downloadPdf} onPublish={togglePublication} />
           ))}
         </div>
       )}

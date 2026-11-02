@@ -1,4 +1,6 @@
-# Hiring Studio
+# NEX Talent & Recruit — Prototype
+
+> Unofficial prototype for NEX Solutions review. Not an approved production recruitment service. Do not enter real candidate personal data.
 
 **AI job description, interview question and hiring rubric generator — with candidate scoring and comparison.**
 
@@ -217,8 +219,8 @@ All routes are under `/api`. Everything except `/api/health` and `/api/auth/*` r
 `VITE_API_URL` to your deployed API origin plus `/api`. `client/vercel.json` already routes SPA deep links.
 
 **Backend (Render / Railway)** — root directory `server`, build `npm install`, start `npm start`. Set
-`GEMINI_API_KEY`, `JWT_SECRET`, `MONGODB_URI` (required in production — a hosted filesystem is usually ephemeral)
-and `CLIENT_ORIGIN` to your frontend URL.
+`GEMINI_API_KEY`, `JWT_SECRET`, `MONGODB_URI` (mandatory in production; the server now refuses local-file fallback when `NODE_ENV=production`)
+and `CLIENT_ORIGIN` to your frontend URL. For the prototype admin bootstrap, set `NEX_BOOTSTRAP_TOKEN` to a long random secret. For invited staff registration, set `NEX_STAFF_INVITE_CODE` to a separate secret. Never expose either value in frontend environment variables.
 
 Alternatively deploy the whole thing as one service: build the client, then run the server, which serves
 `client/dist` when it exists.
@@ -241,3 +243,31 @@ Alternatively deploy the whole thing as one service: build the client, then run 
 - Dark-only interface, on a palette validated for colour-vision deficiency separation and 3:1 contrast against the
   chart surface. The candidate radar chart is capped at three overlaid candidates because that is the largest set
   whose colours remain distinguishable for all-pairs comparison; the full cohort is always available in the table.
+
+
+## NEX prototype capabilities
+
+- **Candidate portal:** public vacancy listing and role detail pages at `/careers`; candidates can submit a basic application with name, email, optional phone and cover note. The application form records consent and a policy-version marker. CV upload, candidate accounts, email confirmations and candidate self-service tracking are not implemented yet.
+- **Recruiter workspace:** existing AI hiring-kit generation, role-specific rubric, candidate scorecards, interview workflows and candidate comparison remain available. Recruiters can publish and unpublish a vacancy to the prototype careers portal.
+- **Workspace access:** staff registration requires `NEX_STAFF_INVITE_CODE`; accounts are assigned to the isolated `nex-prototype` workspace. Staff roles are `admin`, `recruiter`, `hiring_manager` and `interviewer`.
+- **Admin bootstrap:** make one authenticated server-side request to `POST /api/admin/bootstrap` with header `X-Bootstrap-Token: <NEX_BOOTSTRAP_TOKEN>` and JSON body containing `name`, `email`, and a password of at least 12 characters. This endpoint is one-time per prototype workspace. Do not put the token in the browser.
+- **Admin APIs:** `GET /api/admin/users`, `PATCH /api/admin/users/:id`, `PATCH /api/admin/users/:id/deactivate`, and `GET /api/admin/audit` require an administrator token.
+- **Audit:** prototype admin actions and vacancy publication events are recorded in the `auditEvents` collection.
+- **Production guard:** when `NODE_ENV=production`, `MONGODB_URI` is mandatory and database connection failures stop startup rather than falling back to local JSON files.
+
+### Prototype environment variables
+
+```env
+NODE_ENV=development
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=replace_with_a_long_random_secret
+NEX_BOOTSTRAP_TOKEN=replace_with_a_separate_long_random_secret
+NEX_STAFF_INVITE_CODE=replace_with_a_staff_invitation_code
+CLIENT_ORIGIN=http://localhost:5173
+```
+
+### Important limitations before any real-world pilot
+
+This is a review prototype, not production-ready HR software. The public application endpoint uses a process-local basic throttle, not a distributed rate limiter. It does not yet provide CV object storage, candidate login, email delivery, full consent/withdrawal workflows, retention automation, full tenant provisioning, calendar integrations, malware scanning, or independent security testing. The current workspace ID is intentionally fixed for this prototype. Do not connect a production database or real applicant records until NEX has approved the data model, hosting region, privacy notice, retention policy and security controls.
+
+The old development JSON files containing test identities and applicant records have been removed from this feature branch and are now ignored by Git. They remain present in earlier Git history; repository privacy alone does not erase historical copies. Review collaborators and clones, and consider a history rewrite before sharing this repository more widely.

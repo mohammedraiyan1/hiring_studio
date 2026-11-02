@@ -9,9 +9,9 @@ router.use(requireAuth);
 
 async function ownedCandidate(candidateId, userId) {
   const candidate = await candidates.findById(candidateId);
-  if (!candidate || candidate.ownerId !== userId) throw notFound('That candidate could not be found.');
+  if (!candidate || (candidate.organizationId && candidate.organizationId !== 'nex-prototype') || (!candidate.organizationId && candidate.ownerId !== userId)) throw notFound('That candidate could not be found.');
   const role = await roles.findById(candidate.roleId);
-  if (!role || role.ownerId !== userId) throw notFound('That role could not be found.');
+  if (!role || (role.organizationId && role.organizationId !== 'nex-prototype') || (!role.organizationId && role.ownerId !== userId)) throw notFound('That role could not be found.');
   return { candidate, role };
 }
 
@@ -64,7 +64,7 @@ async function saveInterview(req, res, status = 'in_progress') {
   };
   const saved = existing ? await interviews.updateById(existing._id, record) : await interviews.insert(record);
   if (status === 'completed') {
-    await candidates.updateById(candidate._id, { scores: dimensionScores, status: 'completed', updatedAt: now });
+    await candidates.updateById(candidate._id, { scores: dimensionScores, status: 'interview', updatedAt: now });
   }
   res.json({ interview: { id: saved._id, ...saved }, candidateId: candidate._id });
 }

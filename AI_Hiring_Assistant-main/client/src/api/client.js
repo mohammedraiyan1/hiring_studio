@@ -37,6 +37,9 @@ async function request(path, { method = 'GET', body, formData } = {}) {
 
 export const api = {
   health: () => request('/health'),
+  publicJobs: () => request('/public/jobs'),
+  publicJob: (id) => request('/public/jobs/' + encodeURIComponent(id)),
+  applyForJob: (id, body) => request('/public/jobs/' + encodeURIComponent(id) + '/applications', { method: 'POST', body }),
 
   register: (body) => request('/auth/register', { method: 'POST', body }),
   login: (body) => request('/auth/login', { method: 'POST', body }),
@@ -56,6 +59,8 @@ export const api = {
     return { blob: await response.blob(), filename: response.headers.get('Content-Disposition') };
   },
   deleteRole: (id) => request(`/roles/${id}`, { method: 'DELETE' }),
+  publishRole: (id) => request(`/roles/${id}/publish`, { method: 'POST' }),
+  unpublishRole: (id) => request(`/roles/${id}/unpublish`, { method: 'POST' }),
 
   listCandidates: (roleId) => request(`/roles/${roleId}/candidates`),
   createCandidate: (roleId, body) => request(`/roles/${roleId}/candidates`, { method: 'POST', body }),
