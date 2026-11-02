@@ -39,7 +39,11 @@ export const api = {
   health: () => request('/health'),
   publicJobs: () => request('/public/jobs'),
   publicJob: (id) => request('/public/jobs/' + encodeURIComponent(id)),
-  applyForJob: (id, body) => request('/public/jobs/' + encodeURIComponent(id) + '/applications', { method: 'POST', body }),
+  applyForJob: (id, formData) => request('/public/jobs/' + encodeURIComponent(id) + '/applications', { method: 'POST', formData }),
+  listApplications: (params = {}) => request('/applications?' + new URLSearchParams(params).toString()),
+  getApplication: (id) => request('/applications/' + encodeURIComponent(id)),
+  updateApplicationStage: (id, body) => request('/applications/' + encodeURIComponent(id) + '/stage', { method: 'PATCH', body }),
+  reviewApplication: (id, body) => request('/applications/' + encodeURIComponent(id) + '/review', { method: 'PATCH', body }),
 
   register: (body) => request('/auth/register', { method: 'POST', body }),
   login: (body) => request('/auth/login', { method: 'POST', body }),
