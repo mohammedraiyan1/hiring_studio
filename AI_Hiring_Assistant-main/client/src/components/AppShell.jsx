@@ -2,10 +2,11 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useHealth } from '../hooks/useHealth';
 import { Badge } from './ui';
-import { IconBook, IconDashboard, IconLogout, IconSpark } from './icons';
+import { IconBook, IconDashboard, IconLogout, IconSpark, IconUsers } from './icons';
 
 const NAV = [
   { to: '/', label: 'Recruitment', icon: IconDashboard, end: true },
+  { to: '/applications', label: 'Applications', icon: IconUsers },
   { to: '/roles/new', label: 'New role', icon: IconSpark },
   { to: '/knowledge', label: 'Knowledge base', icon: IconBook },
 ];
