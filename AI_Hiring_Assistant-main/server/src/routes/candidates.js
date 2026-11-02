@@ -4,6 +4,8 @@ import { asyncRoute, badRequest, notFound } from '../lib/errors.js';
 import { requireAuth } from '../middleware/auth.js';
 import { clampScore, evaluateCandidate } from '../scoring/evaluate.js';
 import { compareCandidates } from '../scoring/compare.js';
+import { recordAuditEvent } from '../services/auditService.js';
+import { requireRole } from '../middleware/access.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -139,5 +141,70 @@ router.get(
     });
   }),
 );
+
+
+const STAGE_TRANSITIONS = {
+  applied: ['screening','rejected','withdrawn'],
+  screening: ['assessment','interview','rejected','withdrawn'],
+  assessment: ['interview','rejected','withdrawn'],
+  interview: ['offer','rejected','withdrawn','assessment'],
+  offer: ['hired','rejected','withdrawn','interview'],
+  hired: [],
+  rejected: [],
+  withdrawn: [],
+  pending: ['screening','interview','rejected','withdrawn'],
+  completed: ['interview','offer','rejected'],
+};
+const APPLICATION_ROLES = ['admin','recruiter','hiring_manager','interviewer'];
+
+router.get('/applications', requireRole(...APPLICATION_ROLES), asyncRoute(async(req,res)=>{
+  const filter={organizationId:req.user.organizationId};
+  if(req.query.roleId)filter.roleId=String(req.query.roleId);
+  if(req.query.status)filter.status=String(req.query.status);
+  const limit=Math.min(Math.max(Number(req.query.limit)||50,1),100);
+  const offset=Math.max(Number(req.query.offset)||0,0);
+  const all=await candidates.find(filter,{sort:{createdAt:-1}});
+  const page=all.slice(offset,offset+limit);
+  const roleIds=[...new Set(page.map(x=>x.roleId))];
+  const roleRecords=await Promise.all(roleIds.map(id=>roles.findById(id)));
+  const roleMap=new Map(roleRecords.filter(Boolean).map(role=>[role._id,role]));
+  res.json({applications:page.map(c=>({id:c._id,name:c.name,email:c.email,phone:c.phone,status:c.status||'applied',currentRole:c.currentRole||'',experience:c.experience||'',skills:c.skills||[],source:c.applicationSource||'manual',roleId:c.roleId,roleTitle:roleMap.get(c.roleId)?.roleInput?.roleTitle||'Unknown role',createdAt:c.createdAt,reviewStatus:c.review?.status||'unreviewed',resumeReceived:Boolean(c.resumeProfile)})),total:all.length,limit,offset});
+}));
+
+router.get('/applications/:id', requireRole(...APPLICATION_ROLES), asyncRoute(async(req,res)=>{
+  const candidate=await candidates.findById(req.params.id);
+  if(!candidate||candidate.organizationId!==req.user.organizationId)throw notFound('That application could not be found.');
+  const role=await roles.findById(candidate.roleId);
+  if(!role||role.organizationId!==req.user.organizationId)throw notFound('That vacancy could not be found.');
+  res.json({application:{id:candidate._id,...candidate,ownerId:undefined},role:{id:role._id,title:role.roleInput.roleTitle,location:role.roleInput.location,department:role.roleInput.department,rubric:role.kit.rubric}});
+}));
+
+router.patch('/applications/:id/stage', requireRole('admin','recruiter','hiring_manager'), asyncRoute(async(req,res)=>{
+  const candidate=await candidates.findById(req.params.id);
+  if(!candidate||candidate.organizationId!==req.user.organizationId)throw notFound('That application could not be found.');
+  const next=String(req.body?.status||'');
+  const current=candidate.status||'applied';
+  if(!Object.prototype.hasOwnProperty.call(STAGE_TRANSITIONS,current)||!STAGE_TRANSITIONS[current].includes(next))throw badRequest('That stage transition is not allowed. Refresh the application and choose a permitted next stage.');
+  const now=new Date().toISOString();
+  const note=String(req.body?.note||'').trim().slice(0,1000);
+  const history=[...(candidate.stageHistory||[]),{from:current,to:next,at:now,actorType:'staff',actorId:req.user.id,note}];
+  const updated=await candidates.updateById(candidate._id,{status:next,stageHistory:history,updatedAt:now});
+  await recordAuditEvent({actor:req.user,action:'application.stage_changed',resourceType:'application',resourceId:candidate._id,metadata:{from:current,to:next,note}});
+  res.json({application:{id:updated._id,status:updated.status,stageHistory:updated.stageHistory}});
+}));
+
+router.patch('/applications/:id/review', requireRole('admin','recruiter','hiring_manager','interviewer'), asyncRoute(async(req,res)=>{
+  const candidate=await candidates.findById(req.params.id);
+  if(!candidate||candidate.organizationId!==req.user.organizationId)throw notFound('That application could not be found.');
+  const allowed=new Set(['name','email','phone','experience','currentRole','skills','education','employmentHistory','certifications']);
+  const supplied=Array.isArray(req.body?.verifiedFields)?req.body.verifiedFields:[];
+  const verified=[...new Set(supplied.filter(field=>allowed.has(field)))];
+  const notes=String(req.body?.notes||'').trim().slice(0,3000);
+  const now=new Date().toISOString();
+  const review={status:verified.length?'reviewed':'needs_review',verifiedFields:verified,notes,reviewedBy:req.user.id,reviewedAt:now};
+  const updated=await candidates.updateById(candidate._id,{review,updatedAt:now});
+  await recordAuditEvent({actor:req.user,action:'application.profile_reviewed',resourceType:'application',resourceId:candidate._id,metadata:{verifiedFields:verified}});
+  res.json({review:updated.review});
+}));
 
 export default router;
