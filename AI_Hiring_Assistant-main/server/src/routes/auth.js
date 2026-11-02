@@ -1,59 +1,20 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { users } from '../store/index.js';
-import { asyncRoute, badRequest, unauthorized } from '../lib/errors.js';
+import { asyncRoute, badRequest, unauthorized, forbidden } from '../lib/errors.js';
 import { requireAuth, signToken } from '../middleware/auth.js';
-
-const router = Router();
-
-const normalizeEmail = (email) => String(email ?? '').trim().toLowerCase();
-const publicUser = (user) => ({ id: user._id, name: user.name, email: user.email, company: user.company });
-
-router.post(
-  '/register',
-  asyncRoute(async (req, res) => {
-    const email = normalizeEmail(req.body.email);
-    const name = String(req.body.name ?? '').trim();
-    const password = String(req.body.password ?? '');
-
-    if (!name) throw badRequest('Your name is required.');
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw badRequest('Enter a valid email address.');
-    if (password.length < 8) throw badRequest('Use a password of at least 8 characters.');
-    if (await users.findOne({ email })) throw badRequest('An account already exists for that email.');
-
-    const user = await users.insert({
-      name,
-      email,
-      company: String(req.body.company ?? '').trim(),
-      passwordHash: await bcrypt.hash(password, 10),
-      createdAt: new Date().toISOString(),
-    });
-
-    res.status(201).json({ token: signToken(user), user: publicUser(user) });
-  }),
-);
-
-router.post(
-  '/login',
-  asyncRoute(async (req, res) => {
-    const user = await users.findOne({ email: normalizeEmail(req.body.email) });
-    const valid = user && (await bcrypt.compare(String(req.body.password ?? ''), user.passwordHash));
-
-    // One message for both cases so the endpoint cannot be used to enumerate accounts.
-    if (!valid) throw unauthorized('Email or password is incorrect.');
-
-    res.json({ token: signToken(user), user: publicUser(user) });
-  }),
-);
-
-router.get(
-  '/me',
-  requireAuth,
-  asyncRoute(async (req, res) => {
-    const user = await users.findById(req.user.id);
-    if (!user) throw unauthorized('That account no longer exists.');
-    res.json({ user: publicUser(user) });
-  }),
-);
-
+import { ORGANIZATION_ID, STAFF_ROLES } from '../middleware/access.js';
+const router=Router();
+const normalizeEmail=(email)=>String(email??'').trim().toLowerCase();
+const publicUser=(user)=>({id:user._id,name:user.name,email:user.email,company:user.company,role:user.role||'recruiter',department:user.department||'',organizationId:user.organizationId||ORGANIZATION_ID});
+router.post('/register',asyncRoute(async(req,res)=>{
+ const email=normalizeEmail(req.body.email),name=String(req.body.name??'').trim(),password=String(req.body.password??''),inviteCode=String(req.body.inviteCode??'');
+ if(!name)throw badRequest('Your name is required.');if(!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email))throw badRequest('Enter a valid email address.');if(password.length<12)throw badRequest('Use a password of at least 12 characters.');
+ if(!process.env.NEX_STAFF_INVITE_CODE||inviteCode!==process.env.NEX_STAFF_INVITE_CODE)throw forbidden('Staff registration is invitation-only in this prototype. Ask the prototype administrator for the access code.');
+ if(await users.findOne({email}))throw badRequest('An account already exists for that email.');
+ const user=await users.insert({name,email,company:'NEX Solutions (prototype)',organizationId:ORGANIZATION_ID,role:'recruiter',department:String(req.body.department??'').trim().slice(0,80),active:true,passwordHash:await bcrypt.hash(password,12),createdAt:new Date().toISOString()});
+ res.status(201).json({token:signToken(user),user:publicUser(user)});
+}));
+router.post('/login',asyncRoute(async(req,res)=>{const user=await users.findOne({email:normalizeEmail(req.body.email)});const valid=user&&(await bcrypt.compare(String(req.body.password??''),user.passwordHash));if(!valid||user.active===false)throw unauthorized('Email or password is incorrect.');res.json({token:signToken(user),user:publicUser(user)});}));
+router.get('/me',requireAuth,asyncRoute(async(req,res)=>{const user=await users.findById(req.user.id);if(!user||user.active===false)throw unauthorized('That account is no longer active.');res.json({user:publicUser(user)});}));
 export default router;
