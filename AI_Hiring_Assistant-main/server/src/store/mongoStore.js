@@ -14,6 +14,7 @@ export async function createMongoStore({ uri, dbName }) {
   await db.collection('candidates').createIndex({ roleId: 1 });
   await db.collection('interviews').createIndex({ candidateId: 1, userId: 1 }, { unique: true });
   await db.collection('roles').createIndex({ ownerId: 1, createdAt: -1 });
+  await db.collection('auditEvents').createIndex({ organizationId: 1, createdAt: -1 });
 
   return {
     kind: 'mongodb',
