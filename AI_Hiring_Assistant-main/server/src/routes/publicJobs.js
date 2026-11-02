@@ -13,7 +13,7 @@ router.post('/jobs/:id/applications',applicationThrottle,asyncRoute(async(req,re
  const role=await roles.findById(req.params.id);if(!role||role.organizationId!==ORGANIZATION_ID||role.publicationStatus!=='published')throw notFound('This vacancy is no longer accepting applications.');
  if(String(req.body?.website||'').trim())throw badRequest('Application could not be accepted.');
  const name=String(req.body?.name||'').trim().slice(0,120),email=String(req.body?.email||'').trim().toLowerCase().slice(0,160),phone=String(req.body?.phone||'').trim().slice(0,40),coverLetter=String(req.body?.coverLetter||'').trim().slice(0,4000),consent=req.body?.consent===true;
- if(name.length<2||! /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email))throw badRequest('Enter your name and a valid email address.');if(!consent)throw badRequest('Consent to the candidate privacy notice is required to submit.');
+ if(name.length<2||! /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw badRequest('Enter your name and a valid email address.');if(!consent)throw badRequest('Consent to the candidate privacy notice is required to submit.');
  const existing=await candidates.findOne({roleId:role._id,email});if(existing)throw badRequest('An application with this email already exists for this vacancy.');
  const now=new Date().toISOString();
  const candidate=await candidates.insert({roleId:role._id,organizationId:ORGANIZATION_ID,ownerId:role.ownerId,name,email,phone,experience:'',currentRole:'',skills:[],resumeUrl:'',interviewer:'',interviewDate:'',notes:coverLetter,status:'applied',applicationSource:'NEX careers prototype',consent:{accepted:true,policyVersion:'prototype-privacy-v1',acceptedAt:now},scores:{},createdAt:now,updatedAt:now});
