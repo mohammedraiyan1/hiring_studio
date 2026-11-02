@@ -10,13 +10,13 @@ router.use(requireAuth);
 
 async function ownedRole(roleId, userId) {
   const role = await roles.findById(roleId);
-  if (!role || role.ownerId !== userId) throw notFound('That role could not be found.');
+  if (!role || (role.organizationId && role.organizationId !== 'nex-prototype') || (!role.organizationId && role.ownerId !== userId)) throw notFound('That role could not be found.');
   return role;
 }
 
 async function ownedCandidate(id, userId) {
   const candidate = await candidates.findById(id);
-  if (!candidate || candidate.ownerId !== userId) throw notFound('That candidate could not be found.');
+  if (!candidate || (candidate.organizationId && candidate.organizationId !== 'nex-prototype') || (!candidate.organizationId && candidate.ownerId !== userId)) throw notFound('That candidate could not be found.');
   return candidate;
 }
 
@@ -88,6 +88,7 @@ router.post(
     const candidate = await candidates.insert({
       roleId: role._id,
       ownerId: req.user.id,
+      organizationId: role.organizationId || 'nex-prototype',
       ...readDetails(req.body),
       scores: readScores(req.body, role.kit.rubric.dimensions),
       createdAt: now,
