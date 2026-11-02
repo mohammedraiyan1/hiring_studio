@@ -128,7 +128,7 @@ router.delete(
 router.get(
   '/roles/:roleId/comparison',
   asyncRoute(async (req, res) => {
-    const role = await ownedRole(req.params.roleId, req.user.id);
+    const role = await ownedRole(req.params.roleId, req.user.id, req.user.organizationId);
     const dimensions = role.kit.rubric.dimensions;
     const records = await candidates.find({ roleId: role._id }, { sort: { createdAt: 1 } });
 
