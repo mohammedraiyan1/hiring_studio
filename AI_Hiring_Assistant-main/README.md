@@ -69,9 +69,9 @@ All configuration lives in **`server/.env`**. The example file is fully commente
 | `GEMINI_API_KEY` | Recommended | Enables real generation and embeddings. Free key from [Google AI Studio](https://aistudio.google.com/apikey). Without it the app runs in a clearly-labelled offline demo mode. |
 | `GEMINI_MODEL` | No | Defaults to `gemini-2.0-flash` (free tier). |
 | `GEMINI_EMBEDDING_MODEL` | No | Defaults to `text-embedding-004`. |
-| `MONGODB_URI` | No | Leave empty to use the bundled file store (`server/data/*.json`). Set it to use MongoDB Atlas or a local `mongod` — the app detects it at boot and falls back automatically if it cannot connect. |
+| `MONGODB_URI` | Required in production | MongoDB connection string. Local JSON storage is development-only; production startup fails if this is missing or MongoDB is unreachable. |
 | `MONGODB_DB` | No | Database name, defaults to `hiring_studio`. |
-| `JWT_SECRET` | Recommended | Any long random string. Without it, logins stop working across server restarts. |
+| `JWT_SECRET` | Required in production | A persistent, high-entropy random secret. Do not use an ephemeral production secret. |
 | `PORT` | No | Defaults to `5000`. |
 
 **Getting a free Gemini API key**
@@ -82,11 +82,11 @@ All configuration lives in **`server/.env`**. The example file is fully commente
 
 The key is only ever read server-side. The browser talks to `/api` and never sees it.
 
-**Using MongoDB Atlas (optional)**
+**Using MongoDB Atlas (required for production; optional for local development)**
 
 1. Create a free M0 cluster at <https://cloud.mongodb.com>.
-2. Add a database user, and allow access from your IP (or `0.0.0.0/0` for a hackathon demo).
-3. Copy the connection string into `MONGODB_URI` and restart.
+2. Add a database user with a strong password. In Atlas Network Access, allow Render's outbound IP addresses if fixed egress is configured; otherwise use `0.0.0.0/0` only as a temporary prototype setting and restrict the database user to the minimum required privileges.
+3. Copy the connection string into Render's backend service environment as `MONGODB_URI`, replacing the username, password and database name placeholders. Never commit this value to Git.
 
 Documents use string `_id`s, so the same data shape works in either backend.
 
@@ -233,7 +233,8 @@ Alternatively deploy the whole thing as one service: build the client, then run 
 | Retrieval mode stays *lexical* | Embeddings need an API key. Without one, BM25 retrieval is used and the app still works. |
 | `EADDRINUSE :::5000` | Another process holds port 5000. Change `PORT` in `server/.env`. |
 | Logins stop working after a restart | `JWT_SECRET` is unset, so an ephemeral secret is generated per boot. Set it. |
-| MongoDB warning at boot, app still starts | The URI was unreachable, so the local file store was used instead. Check the connection string and IP allowlist. |
+| `MONGODB_URI is required in production` | Add `MONGODB_URI` to the Render backend service environment, then redeploy. Do not disable the production database guard. |
+| `Production database unavailable` | Check Atlas cluster status, database username/password, URL encoding of special password characters, database name, and Atlas Network Access allowlist. |
 | Upload rejected as *almost no text* | The PDF is a scanned image. This project does not OCR — paste the text as a note instead. |
 
 ## Notes on scope
