@@ -23,6 +23,6 @@ export function createApp() {
  app.get('/api/health',(_req,res)=>res.json({ok:true,storage:storeKind(),environment:config.nodeEnv,ai:{provider:'google-gemini',configured:isGeminiEnabled(),model:isGeminiEnabled()?config.gemini.model:null,mode:isGeminiEnabled()?'live':'offline-demo'},retrieval:{topK:TOP_K,...knowledgeStats()}}));
  app.use('/api/auth',authRoutes); app.use('/api/public',publicJobsRoutes); app.use('/api/admin',adminRoutes); app.use('/api/roles',roleRoutes); app.use('/api',candidateRoutes); app.use('/api',interviewRoutes); app.use('/api',resumeRoutes); app.use('/api/knowledge',knowledgeRoutes);
  const clientDist=path.resolve(config.serverRoot,'../client/dist');
- if(fs.existsSync(path.join(clientDist,'index.html'))){app.use(express.static(clientDist));app.get(/^\/(?!api\/).*/,(_req,res)=>res.sendFile(path.join(clientDist,'index.html')));}
+ if(fs.existsSync(path.join(clientDist,'index.html'))){app.use(express.static(clientDist));app.get('*',(req,res,next)=>{if(req.path.startsWith('/api/'))return next();return res.sendFile(path.join(clientDist,'index.html'));});}
  app.use(notFoundHandler); app.use(errorHandler); return app;
 }
