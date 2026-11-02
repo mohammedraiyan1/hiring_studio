@@ -14,7 +14,7 @@ function EvidenceList({items=[]}){
 export default function ApplicationDetailPage(){
  const {id}=useParams(),{notify}=useToast();
  const [record,setRecord]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[stage,setStage]=useState(''),[stageNote,setStageNote]=useState(''),[reviewNotes,setReviewNotes]=useState(''),[verified,setVerified]=useState([]);
- const load=()=>api.getApplication(id).then(r=>{setRecord(r);setStage(r.application.status||'applied');setReviewNotes(r.application.review?.notes||'');setVerified(r.application.review?.verifiedFields||[]);}).catch(e=>setError(e.message));
+ const load=()=>api.getApplication(id).then(r=>{setRecord(r);setStage((nextStages[r.application.status||'applied']||[])[0]||'');setReviewNotes(r.application.review?.notes||'');setVerified(r.application.review?.verifiedFields||[]);}).catch(e=>setError(e.message));
  useEffect(()=>{load();},[id]);
  const profile=record?.application.resumeProfile;
  const stages=useMemo(()=>nextStages[record?.application.status||'applied']||[],[record]);
