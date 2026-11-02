@@ -24,5 +24,6 @@ jobs:
       - run: npm ci --prefix server
       - run: npm ci --prefix client
       - run: npm run build --prefix client
+      - run: npm test --prefix server
       - name: Check server JavaScript syntax
         run: find server/src -name '*.js' -print0 | xargs -0 -n1 node --check
