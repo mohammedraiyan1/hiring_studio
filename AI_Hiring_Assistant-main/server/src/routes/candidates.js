@@ -201,7 +201,9 @@ router.patch('/applications/:id/review', requireRole('admin','recruiter','hiring
   if(!candidate||candidate.organizationId!==req.user.organizationId)throw notFound('That application could not be found.');
   const allowed=new Set(['name','email','phone','experience','currentRole','skills','education','employmentHistory','certifications']);
   const supplied=Array.isArray(req.body?.verifiedFields)?req.body.verifiedFields:[];
-  const verified=[...new Set(supplied.filter(field=>allowed.has(field)))];
+  const profile=candidate.resumeProfile||{};
+  const available={name:candidate.name,email:candidate.email,phone:candidate.phone,experience:candidate.experience,currentRole:candidate.currentRole,skills:candidate.skills,education:profile.education,employmentHistory:profile.employmentHistory,certifications:profile.certifications};
+  const verified=[...new Set(supplied.filter(field=>allowed.has(field)&&((Array.isArray(available[field])&&available[field].length>0)||(!Array.isArray(available[field])&&String(available[field]||'').trim().length>0))))];
   const notes=String(req.body?.notes||'').trim().slice(0,3000);
   const now=new Date().toISOString();
   const review={status:verified.length?'reviewed':'needs_review',verifiedFields:verified,notes,reviewedBy:req.user.id,reviewedAt:now};
