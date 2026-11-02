@@ -66,8 +66,8 @@ router.get(
   '/',
   asyncRoute(async (req, res) => {
     const [owned, allCandidates] = await Promise.all([
-      roles.find({ ownerId: req.user.id }, { sort: { createdAt: -1 } }),
-      candidates.find({ ownerId: req.user.id }),
+      roles.find({ organizationId: req.user.organizationId }, { sort: { createdAt: -1 } }),
+      candidates.find({ organizationId: req.user.organizationId }),
     ]);
 
     const counts = allCandidates.reduce(
