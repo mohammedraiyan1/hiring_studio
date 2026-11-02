@@ -64,7 +64,7 @@ async function saveInterview(req, res, status = 'in_progress') {
   };
   const saved = existing ? await interviews.updateById(existing._id, record) : await interviews.insert(record);
   if (status === 'completed') {
-    await candidates.updateById(candidate._id, { scores: dimensionScores, status: 'completed', updatedAt: now });
+    await candidates.updateById(candidate._id, { scores: dimensionScores, status: 'interview', updatedAt: now });
   }
   res.json({ interview: { id: saved._id, ...saved }, candidateId: candidate._id });
 }
