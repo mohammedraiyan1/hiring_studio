@@ -37,6 +37,9 @@ async function request(path, { method = 'GET', body, formData } = {}) {
 
 export const api = {
   health: () => request('/health'),
+  publicJobs: () => request('/public/jobs'),
+  publicJob: (id) => request('/public/jobs/' + encodeURIComponent(id)),
+  applyForJob: (id, body) => request('/public/jobs/' + encodeURIComponent(id) + '/applications', { method: 'POST', body }),
 
   register: (body) => request('/auth/register', { method: 'POST', body }),
   login: (body) => request('/auth/login', { method: 'POST', body }),
