@@ -6,6 +6,7 @@ import { clampScore, evaluateCandidate } from '../scoring/evaluate.js';
 import { compareCandidates } from '../scoring/compare.js';
 import { recordAuditEvent } from '../services/auditService.js';
 import { requireRole } from '../middleware/access.js';
+import { canTransition, createStageEvent } from '../services/applicationWorkflow.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -146,18 +147,6 @@ router.get(
 );
 
 
-const STAGE_TRANSITIONS = {
-  applied: ['screening','interview','rejected','withdrawn'],
-  screening: ['assessment','interview','rejected','withdrawn'],
-  assessment: ['interview','rejected','withdrawn'],
-  interview: ['offer','rejected','withdrawn','assessment'],
-  offer: ['hired','rejected','withdrawn','interview'],
-  hired: [],
-  rejected: [],
-  withdrawn: [],
-  pending: ['screening','interview','rejected','withdrawn'],
-  completed: ['interview','offer','rejected'],
-};
 const APPLICATION_ROLES = ['admin','recruiter','hiring_manager','interviewer'];
 
 router.get('/applications', requireRole(...APPLICATION_ROLES), asyncRoute(async(req,res)=>{
@@ -187,10 +176,10 @@ router.patch('/applications/:id/stage', requireRole('admin','recruiter','hiring_
   if(!candidate||candidate.organizationId!==req.user.organizationId)throw notFound('That application could not be found.');
   const next=String(req.body?.status||'');
   const current=candidate.status||'applied';
-  if(!Object.prototype.hasOwnProperty.call(STAGE_TRANSITIONS,current)||!STAGE_TRANSITIONS[current].includes(next))throw badRequest('That stage transition is not allowed. Refresh the application and choose a permitted next stage.');
+  if(!canTransition(current,next))throw badRequest('That stage transition is not allowed. Refresh the application and choose a permitted next stage.');
   const now=new Date().toISOString();
   const note=String(req.body?.note||'').trim().slice(0,1000);
-  const history=[...(candidate.stageHistory||[]),{from:current,to:next,at:now,actorType:'staff',actorId:req.user.id,note}];
+  const history=[...(candidate.stageHistory||[]),createStageEvent({from:current,to:next,at:now,actorType:'staff',actorId:req.user.id,note})];
   const updated=await candidates.updateById(candidate._id,{status:next,stageHistory:history,updatedAt:now});
   await recordAuditEvent({actor:req.user,action:'application.stage_changed',resourceType:'application',resourceId:candidate._id,metadata:{from:current,to:next,note}});
   res.json({application:{id:updated._id,status:updated.status,stageHistory:updated.stageHistory}});
