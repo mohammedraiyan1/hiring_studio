@@ -82,7 +82,7 @@ router.get(
 router.post(
   '/roles/:roleId/candidates',
   asyncRoute(async (req, res) => {
-    const role = await ownedRole(req.params.roleId, req.user.id);
+    const role = await ownedRole(req.params.roleId, req.user.id, req.user.organizationId);
     const now = new Date().toISOString();
 
     const candidate = await candidates.insert({
