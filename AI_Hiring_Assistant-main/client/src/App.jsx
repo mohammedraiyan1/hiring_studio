@@ -12,6 +12,8 @@ import KnowledgePage from './pages/KnowledgePage';
 import InterviewPage from './pages/InterviewPage';
 import RankingPage from './pages/RankingPage';
 import { CareersPage, CareerJobPage } from './pages/CareersPage';
+import ApplicationsPage from './pages/ApplicationsPage';
+import ApplicationDetailPage from './pages/ApplicationDetailPage';
 
 function Protected({ children }) {
   const { user, checking } = useAuth();
@@ -33,6 +35,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/careers" element={<CareersPage />} />
+      <Route path="/applications" element={<Protected><ApplicationsPage /></Protected>} />
+      <Route path="/applications/:id" element={<Protected><ApplicationDetailPage /></Protected>} />
       <Route path="/careers/:id" element={<CareerJobPage />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <LoginPage initialMode="register" />} />
