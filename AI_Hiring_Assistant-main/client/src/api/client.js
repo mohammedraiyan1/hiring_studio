@@ -59,6 +59,8 @@ export const api = {
     return { blob: await response.blob(), filename: response.headers.get('Content-Disposition') };
   },
   deleteRole: (id) => request(`/roles/${id}`, { method: 'DELETE' }),
+  publishRole: (id) => request(`/roles/${id}/publish`, { method: 'POST' }),
+  unpublishRole: (id) => request(`/roles/${id}/unpublish`, { method: 'POST' }),
 
   listCandidates: (roleId) => request(`/roles/${roleId}/candidates`),
   createCandidate: (roleId, body) => request(`/roles/${roleId}/candidates`, { method: 'POST', body }),
