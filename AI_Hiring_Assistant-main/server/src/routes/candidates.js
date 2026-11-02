@@ -8,15 +8,15 @@ import { compareCandidates } from '../scoring/compare.js';
 const router = Router();
 router.use(requireAuth);
 
-async function ownedRole(roleId, userId) {
+async function ownedRole(roleId, userId, organizationId) {
   const role = await roles.findById(roleId);
-  if (!role || (role.organizationId && role.organizationId !== 'nex-prototype') || (!role.organizationId && role.ownerId !== userId)) throw notFound('That role could not be found.');
+  if (!role || (role.organizationId && role.organizationId !== organizationId) || (!role.organizationId && role.ownerId !== userId)) throw notFound('That role could not be found.');
   return role;
 }
 
-async function ownedCandidate(id, userId) {
+async function ownedCandidate(id, userId, organizationId) {
   const candidate = await candidates.findById(id);
-  if (!candidate || (candidate.organizationId && candidate.organizationId !== 'nex-prototype') || (!candidate.organizationId && candidate.ownerId !== userId)) throw notFound('That candidate could not be found.');
+  if (!candidate || (candidate.organizationId && candidate.organizationId !== organizationId) || (!candidate.organizationId && candidate.ownerId !== userId)) throw notFound('That candidate could not be found.');
   return candidate;
 }
 
@@ -70,7 +70,7 @@ const present = ({ _id, ownerId, ...candidate }) => ({ id: _id, ...candidate });
 router.get(
   '/roles/:roleId/candidates',
   asyncRoute(async (req, res) => {
-    const role = await ownedRole(req.params.roleId, req.user.id);
+    const role = await ownedRole(req.params.roleId, req.user.id, req.user.organizationId);
     const records = await candidates.find({ roleId: role._id }, { sort: { createdAt: 1 } });
 
     res.json({
@@ -102,8 +102,8 @@ router.post(
 router.put(
   '/candidates/:id',
   asyncRoute(async (req, res) => {
-    const existing = await ownedCandidate(req.params.id, req.user.id);
-    const role = await ownedRole(existing.roleId, req.user.id);
+    const existing = await ownedCandidate(req.params.id, req.user.id, req.user.organizationId);
+    const role = await ownedRole(existing.roleId, req.user.id, req.user.organizationId);
 
     const updated = await candidates.updateById(existing._id, {
       ...readDetails(req.body),
@@ -118,7 +118,7 @@ router.put(
 router.delete(
   '/candidates/:id',
   asyncRoute(async (req, res) => {
-    const candidate = await ownedCandidate(req.params.id, req.user.id);
+    const candidate = await ownedCandidate(req.params.id, req.user.id, req.user.organizationId);
     await interviews.deleteMany({ candidateId: candidate._id });
     await candidates.deleteById(candidate._id);
     res.json({ deleted: true });
