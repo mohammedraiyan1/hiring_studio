@@ -54,7 +54,7 @@ function readDetails(body) {
     interviewer: String(body?.interviewer ?? '').trim().slice(0, 120),
     interviewDate: String(body?.interviewDate ?? '').slice(0, 30),
     notes: String(body?.notes ?? '').trim().slice(0, 4000),
-    status: String(body?.status ?? 'pending').trim() === 'completed' ? 'completed' : 'pending',
+    status: ['applied', 'screening', 'assessment', 'interview', 'offer', 'hired', 'rejected', 'withdrawn', 'pending', 'completed'].includes(String(body?.status ?? 'pending').trim()) ? String(body?.status ?? 'pending').trim() : 'pending',
   };
 }
 
