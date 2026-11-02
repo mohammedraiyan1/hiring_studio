@@ -9,7 +9,7 @@ const normalizeEmail=(email)=>String(email??'').trim().toLowerCase();
 const publicUser=(user)=>({id:user._id,name:user.name,email:user.email,company:user.company,role:user.role||'recruiter',department:user.department||'',organizationId:user.organizationId||ORGANIZATION_ID});
 router.post('/register',asyncRoute(async(req,res)=>{
  const email=normalizeEmail(req.body.email),name=String(req.body.name??'').trim(),password=String(req.body.password??''),inviteCode=String(req.body.inviteCode??'');
- if(!name)throw badRequest('Your name is required.');if(!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email))throw badRequest('Enter a valid email address.');if(password.length<12)throw badRequest('Use a password of at least 12 characters.');
+ if(!name)throw badRequest('Your name is required.');if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw badRequest('Enter a valid email address.');if(password.length<12)throw badRequest('Use a password of at least 12 characters.');
  if(!process.env.NEX_STAFF_INVITE_CODE||inviteCode!==process.env.NEX_STAFF_INVITE_CODE)throw forbidden('Staff registration is invitation-only in this prototype. Ask the prototype administrator for the access code.');
  if(await users.findOne({email}))throw badRequest('An account already exists for that email.');
  const user=await users.insert({name,email,company:'NEX Solutions (prototype)',organizationId:ORGANIZATION_ID,role:'recruiter',department:String(req.body.department??'').trim().slice(0,80),active:true,passwordHash:await bcrypt.hash(password,12),createdAt:new Date().toISOString()});
