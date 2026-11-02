@@ -3,6 +3,7 @@ import { candidates, interviews, roles } from '../store/index.js';
 import { asyncRoute, badRequest, notFound } from '../lib/errors.js';
 import { requireAuth } from '../middleware/auth.js';
 import { clampScore } from '../scoring/evaluate.js';
+import { recordAuditEvent } from '../services/auditService.js';
 
 const router = Router();
 router.use(requireAuth);
