@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { users } from '../store/index.js';
+import { users, auditEvents } from '../store/index.js';
 import { asyncRoute, badRequest, forbidden, unauthorized } from '../lib/errors.js';
 import { requireAuth } from '../middleware/auth.js';
 import { ORGANIZATION_ID, STAFF_ROLES, requireRole } from '../middleware/access.js';
