@@ -50,7 +50,7 @@ function ScoreRing({ percentage }) {
   );
 }
 
-function CandidateRow({ roleId, candidate, onEdit, onDelete, onStageChange }) {
+function CandidateRow({ roleId, candidate, onEdit, onDelete }) {
   const { totals } = candidate.evaluation;
 
   return (
@@ -79,9 +79,6 @@ function CandidateRow({ roleId, candidate, onEdit, onDelete, onStageChange }) {
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-        <select aria-label={'Application stage for ' + candidate.name} className="input w-36 py-2 text-xs" value={candidate.status || 'pending'} onChange={event => onStageChange(candidate, event.target.value)}>
-          {['applied','screening','assessment','interview','offer','hired','rejected','withdrawn','pending','completed'].map(stage => <option key={stage} value={stage}>{stage.replace(/^./, c => c.toUpperCase())}</option>)}
-        </select>
         <Link to={`/jobs/${roleId}/candidates/${candidate.id}/interview`}>
           <Button size="sm">Interview</Button>
         </Link>
@@ -197,13 +194,6 @@ export default function CandidatesPage() {
     }
   }
 
-  async function changeStage(candidate, status) {
-    try {
-      await api.updateCandidate(candidate.id, { ...candidate, status });
-      await loadCandidates();
-      notify('Application moved to ' + status + '.', 'success');
-    } catch (requestError) { notify(requestError.message, 'error'); }
-  }
 
   async function remove(candidate) {
     if (!window.confirm(`Delete ${candidate.name}'s scorecard?`)) return;
@@ -381,7 +371,7 @@ export default function CandidatesPage() {
         {candidates.length ? (
           <ul className="divide-y divide-line">
             {candidates.map((candidate) => (
-              <CandidateRow key={candidate.id} roleId={roleId} candidate={candidate} onEdit={startEdit} onDelete={remove} onStageChange={changeStage} />
+              <CandidateRow key={candidate.id} roleId={roleId} candidate={candidate} onEdit={startEdit} onDelete={remove} />
             ))}
           </ul>
         ) : (
