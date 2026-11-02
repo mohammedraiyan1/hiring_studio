@@ -51,6 +51,8 @@ const summarise = (role, candidateCount) => ({
   generationSource: role.generation.source,
   retrievalMode: role.retrieval.mode,
   candidateCount,
+  publicationStatus: role.publicationStatus || 'draft',
+  publishedAt: role.publishedAt || null,
   createdAt: role.createdAt,
 });
 
