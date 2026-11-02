@@ -17,7 +17,7 @@ router.post('/bootstrap', asyncRoute(async (req, res) => {
   const name = String(req.body?.name || '').trim();
   const email = String(req.body?.email || '').trim().toLowerCase();
   const password = String(req.body?.password || '');
-  if (name.length < 2 || !/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email) || password.length < 12) throw badRequest('Provide a name, valid email and password of at least 12 characters.');
+  if (name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || password.length < 12) throw badRequest('Provide a name, valid email and password of at least 12 characters.');
   if (await users.findOne({ email })) throw badRequest('An account already exists for that email.');
   const user = await users.insert({ name, email, company: 'NEX Solutions (prototype)', organizationId: ORGANIZATION_ID, role: 'admin', department: 'Administration', active: true, passwordHash: await bcrypt.hash(password, 12), createdAt: new Date().toISOString() });
   await recordAuditEvent({ actor: { id: user._id, email }, action: 'admin.bootstrap', resourceType: 'user', resourceId: user._id });
