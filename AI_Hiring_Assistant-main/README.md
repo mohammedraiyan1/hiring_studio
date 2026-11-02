@@ -271,3 +271,22 @@ CLIENT_ORIGIN=http://localhost:5173
 This is a review prototype, not production-ready HR software. The public application endpoint uses a process-local basic throttle, not a distributed rate limiter. It does not yet provide CV object storage, candidate login, email delivery, full consent/withdrawal workflows, retention automation, full tenant provisioning, calendar integrations, malware scanning, or independent security testing. The current workspace ID is intentionally fixed for this prototype. Do not connect a production database or real applicant records until NEX has approved the data model, hosting region, privacy notice, retention policy and security controls.
 
 The old development JSON files containing test identities and applicant records have been removed from this feature branch and are now ignored by Git. They remain present in earlier Git history; repository privacy alone does not erase historical copies. Review collaborators and clones, and consider a history rewrite before sharing this repository more widely.
+
+
+### Recruiter application pipeline
+
+- \`GET /api/applications\` — organization-scoped inbox with optional \`status\`, \`roleId\`, \`limit\` and \`offset\` filters.
+- \`GET /api/applications/:id\` — candidate profile, extracted CV evidence, consent metadata, review status, stage history and role rubric.
+- \`PATCH /api/applications/:id/stage\` — server-validated stage transition with an audit event and immutable history entry.
+- \`PATCH /api/applications/:id/review\` — record recruiter-verified profile fields and review notes.
+- Public \`POST /api/public/jobs/:id/applications\` accepts multipart form data with an optional PDF/DOCX resume (maximum 8 MB).
+- CV text is extracted in memory. The original file is discarded; only a limited metadata record and SHA-256 digest are stored. Gemini extraction is explicitly marked unverified and each evidence excerpt is checked against the extracted source text before it is retained.
+- If Gemini is unavailable, local fallback extracts only basic contact details. It does not guess experience, education, employment or skills.
+- Stage progression is controlled by the API. The recruiter UI cannot arbitrarily set a status through the candidate scorecard update route.
+
+The current stage flow is:
+\`Applied → Screening → Assessment → Interview → Offer → Hired\`, with \`Rejected\` and \`Withdrawn\` exits from eligible stages. The API rejects invalid transitions.
+
+### Current limitations of the recruiter pipeline
+
+The original CV is not stored, so it cannot be opened from the recruiter portal. A real pilot requires approved private object storage, malware scanning, authenticated download, retention/deletion rules, candidate withdrawal handling and privacy review. The process-local application throttle is only a prototype safeguard, not distributed rate limiting. Gemini receives resume text when configured; NEX must approve the provider, hosting region and processing terms before real candidate data is submitted.
